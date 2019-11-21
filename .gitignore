@@ -1,1 +1,47 @@
+# Compiled files
+*.tfstate
+*.tfstate.*
+
+# Module directory in any sub-folder
+**/.terraform
+
+# State file in any sub-folder
+**/terraform.tfstate
+**/terraform.tfstate.backup
+*.tfstate.lock.info
+
+# Terraform Variables
+*.tfvars
+
+# Ignored Terraform files
+*gitignore*.tf
+
+# SSH Keys
+*.pem
+
+*.DS_Store
+*.vagrant
+
+# Generated private key
+
+# Digital Ocean API key
 .key
+
+# rke files
+cluster.rkestate
+kube_config_cluster.yml
+cluster.yml
+
+
+drwxr-xr-x   3 bradmin  staff      96 21 Nov 12:34 .terraform
+-rw-r-----   1 bradmin  staff  116384 21 Nov 23:30 cluster.rkestate
+-rw-r-----   1 bradmin  staff    4479 21 Nov 19:07 cluster.yml
+-rw-r-----   1 bradmin  staff    5390 21 Nov 23:28 kube_config_cluster.yml
+-rw-r--r--   1 bradmin  staff     564 21 Nov 17:13 output.tf
+-rw-r--r--   1 bradmin  staff    1515 21 Nov 23:18 pre-reqs.sh
+-rw-r--r--   1 bradmin  staff     280 21 Nov 12:43 provider.tf
+-rw-r--r--   1 bradmin  staff     857 21 Nov 17:42 rkeha.tf
+-rw-r--r--   1 bradmin  staff     398 21 Nov 17:30 secvars.gitignore.tf
+-rw-r--r--   1 bradmin  staff    5717 21 Nov 18:46 terraform.tfstate
+-rw-r--r--   1 bradmin  staff     158 21 Nov 18:46 terraform.tfstate.backup
+-rw-r--r--   1 bradmin  staff     389 21 Nov 15:53 variables.tf
