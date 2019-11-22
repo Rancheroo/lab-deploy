@@ -7,7 +7,17 @@ resource "digitalocean_droplet" "ha1" {
 	ssh_keys = [
 		"${var.ssh_fingerprint}"
 	]
+	connection {
+    type         = "ssh"
+    user         = "root"
+    private_key  = "${file(var.pvt_key)}"
+		timeout      = "2m"
+		host         = digitalocean_droplet.ha1.ipv4_address 
   }
+  provisioner "remote-exec" {
+		script = "/tmp/pre-reqs.sh" 
+	}
+}
 
 resource "digitalocean_droplet" "ha2" {
   image    = "ubuntu-18-04-x64"
@@ -17,7 +27,17 @@ resource "digitalocean_droplet" "ha2" {
 	ssh_keys = [
 		"${var.ssh_fingerprint}"
 	]
+	connection {
+    type         = "ssh"
+    user         = "root"
+    private_key  = "${file(var.pvt_key)}"
+		timeout      = "2m"
+		host         = digitalocean_droplet.ha2.ipv4_address 
   }
+  provisioner "remote-exec" {
+		script = "/tmp/pre-reqs.sh" 
+	}
+}
  
 resource "digitalocean_droplet" "ha3" {
   image    = "ubuntu-18-04-x64"
@@ -27,7 +47,17 @@ resource "digitalocean_droplet" "ha3" {
 	ssh_keys = [
 		"${var.ssh_fingerprint}"
 	]
-	 }
+	connection {
+    type         = "ssh"
+    user         = "root"
+    private_key  = "${file(var.pvt_key)}"
+		timeout      = "2m"
+		host         = digitalocean_droplet.ha3.ipv4_address 
+  }
+	provisioner "remote-exec" {
+		script = "/tmp/pre-reqs.sh" 
+	}
+}
 	 
 resource "digitalocean_droplet" "ha4" {
   image    = "ubuntu-18-04-x64"
@@ -37,8 +67,38 @@ resource "digitalocean_droplet" "ha4" {
 	ssh_keys = [
 		"${var.ssh_fingerprint}"
 	]
+	connection {
+    type         = "ssh"
+    user         = "root"
+    private_key  = "${file(var.pvt_key)}"
+		timeout      = "2m"
+		host         = digitalocean_droplet.ha4.ipv4_address 
   }
+  provisioner "remote-exec" {
+		script = "/tmp/pre-reqs.sh" 
+	}
+}
 
+resource "null_resource" "null_id" {
+  provisioner "local-exec" {
+		command = <<EOT
+		rm -f cluster.yml cluster.rkestate
+		cp cluster.yml.source cluster.yml
+		echo "s/HA1ADDRESS/${digitalocean_droplet.ha1.ipv4_address}/" > cluster.sed
+    echo "s/HA1NAME/${digitalocean_droplet.ha1.name}/" >> cluster.sed
+    echo "s/HA2ADDRESS/${digitalocean_droplet.ha2.ipv4_address}/" >> cluster.sed
+    echo "s/HA2NAME/${digitalocean_droplet.ha2.name}/" >> cluster.sed
+    echo "s/HA3ADDRESS/${digitalocean_droplet.ha3.ipv4_address}/" >> cluster.sed
+    echo "s/HA3NAME/${digitalocean_droplet.ha3.name}/" >> cluster.sed
+    echo "s/HA4ADDRESS/${digitalocean_droplet.ha4.ipv4_address}/" >> cluster.sed
+    echo "s/HA4NAME/${digitalocean_droplet.ha4.name}/" >> cluster.sed
+		sed -i .bak -f cluster.sed cluster.yml
+		EOT
+	}
+}
 
-# provisioners "local-exec" {
-
+# resource "null_resource" "null_id" {
+#   provisioner "local-exec" {
+# 		command = sed -i .bak -f cluster.sed cluster.yml
+# 	}
+# }
