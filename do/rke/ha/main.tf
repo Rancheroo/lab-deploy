@@ -15,7 +15,7 @@ resource "digitalocean_droplet" "ha1" {
 		host         = digitalocean_droplet.ha1.ipv4_address 
   }
   provisioner "remote-exec" {
-		script = "/tmp/pre-reqs.sh" 
+		script = "pre-reqs.sh" 
 	}
 }
 
@@ -35,7 +35,7 @@ resource "digitalocean_droplet" "ha2" {
 		host         = digitalocean_droplet.ha2.ipv4_address 
   }
   provisioner "remote-exec" {
-		script = "/tmp/pre-reqs.sh" 
+		script = "pre-reqs.sh" 
 	}
 }
  
@@ -55,7 +55,7 @@ resource "digitalocean_droplet" "ha3" {
 		host         = digitalocean_droplet.ha3.ipv4_address 
   }
 	provisioner "remote-exec" {
-		script = "/tmp/pre-reqs.sh" 
+		script = "pre-reqs.sh" 
 	}
 }
 	 
@@ -75,7 +75,7 @@ resource "digitalocean_droplet" "ha4" {
 		host         = digitalocean_droplet.ha4.ipv4_address 
   }
   provisioner "remote-exec" {
-		script = "/tmp/pre-reqs.sh" 
+		script = "pre-reqs.sh" 
 	}
 }
 
