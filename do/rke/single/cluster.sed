@@ -1,0 +1,2 @@
+s/HA1ADDRESS/159.65.133.108/
+s/HA1NAME/bj-single-all/
