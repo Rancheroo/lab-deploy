@@ -1,14 +1,14 @@
 # If you intened to deploy Kubernetes in an air-gapped environment,
 # please consult the documentation on how to configure custom RKE images.
 nodes:
-- address: HA1ADDRESS
+- address: singleADDRESS
   port: "22"
   internal_address: ""
   role:
   - controlplane
   - etcd
   - worker
-  hostname_override: HA1NAME 
+  hostname_override: singleNAME 
   user: root
   docker_socket: /var/run/docker.sock
   ssh_key: ""

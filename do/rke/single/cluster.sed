@@ -1,2 +1,2 @@
-s/HA1ADDRESS/159.65.133.108/
-s/HA1NAME/bj-single-all/
+s/singleADDRESS/134.209.106.106/
+s/singleNAME/bj-single-all/
