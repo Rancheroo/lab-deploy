@@ -92,7 +92,7 @@ resource "null_resource" "null_id" {
     echo "s/HA3NAME/${digitalocean_droplet.ha3.name}/" >> cluster.sed
     echo "s/HA4ADDRESS/${digitalocean_droplet.ha4.ipv4_address}/" >> cluster.sed
     echo "s/HA4NAME/${digitalocean_droplet.ha4.name}/" >> cluster.sed
-    sed -i .bak -f cluster.sed cluster.yml
+    sed -i cluster.yml.bak -f cluster.sed cluster.yml
     EOT
   }
 }
