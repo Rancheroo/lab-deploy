@@ -31,6 +31,7 @@
 cluster.rkestate
 kube_config_cluster.yml
 cluster.yml
+cluster.sed
 
 
 drwxr-xr-x   3 bradmin  staff      96 21 Nov 12:34 .terraform

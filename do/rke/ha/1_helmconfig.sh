@@ -11,4 +11,4 @@ helm repo add rancher-stable https://releases.rancher.com/server-charts/stable \
   cert-manager jetstack/cert-manager \
   --namespace cert-manager \
   --version v0.9.1
-kubectl get pods --namespace cert-manager -w
+kubectl get pods --namespace cert-manager
