@@ -1,2 +1,2 @@
-s/singleADDRESS/134.209.106.106/
+s/singleADDRESS/178.128.102.73/
 s/singleNAME/bj-single-all/
