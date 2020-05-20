@@ -3,7 +3,7 @@ resource "digitalocean_droplet" "single" {
   image    = "ubuntu-18-04-x64"
   name     = "${var.n1_name}"
   region   = "sgp1"
-  size     = "s-2vcpu-4gb"
+  size     = "s-4vcpu-8gb"
   ssh_keys = [
     "${var.ssh_fingerprint}"
   ]

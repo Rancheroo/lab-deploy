@@ -1,6 +1,7 @@
 #!/bin/bash
 export KUBECONFIG=kube_config_cluster.yml
-helm repo add rancher-stable https://releases.rancher.com/server-charts/stable \
+# helm repo add rancher-stable https://releases.rancher.com/server-charts/stable \
+helm repo add rancher-alpha https://releases.rancher.com/server-charts/alpha \
 && kubectl create namespace cattle-system \
 && kubectl apply -f https://raw.githubusercontent.com/jetstack/cert-manager/release-0.9/deploy/manifests/00-crds.yaml \
 && kubectl create namespace cert-manager \

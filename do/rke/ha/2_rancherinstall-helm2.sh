@@ -1,6 +1,7 @@
 #!/bin/bash
 export KUBECONFIG=kube_config_cluster.yml
-helm install rancher rancher-latest/rancher \
+helm install rancher-stable/rancher \
+  --name rancher \
   --namespace cattle-system \
-  --set hostname=brad.do.support.rancher.space --version 2.4.2
+  --set hostname=brad.do.support.rancher.space --version 2.2.8
 kubectl -n cattle-system rollout status deploy/rancher

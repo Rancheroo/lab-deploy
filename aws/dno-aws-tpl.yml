@@ -1,0 +1,242 @@
+locals {
+  count             = 3
+  prefix            = "dnoland-rancher-ha"
+  domain            = "support.rancher.space"
+  fqdn              = "${local.prefix}.support.rancher.space"
+  key_name          = "dnoland"
+  username          = "rancher"
+  instance_type     = "t3a.medium"
+  availability_zone = "us-west-2c"
+# rancher_version   = "v2.2.2"
+# rancher_version   = "v2.2.7"
+# rancher_version   = "v2.2.8"
+# rancher_version   = "v2.3.0"
+# rancher_version   = "v2.3.1"
+# rancher_version   = "v2.3.2"
+  rancher_version   = "v2.3.3"
+}
+
+module "networking" {
+  source = "../modules/networking"
+  prefix = "${local.prefix}"
+  sn_cidr_block = "10.0.4.0/24"
+}
+
+module "ami" {
+  source = "../modules/ami"
+}
+
+resource "aws_security_group_rule" "tcp_allow_443" {
+  type              = "ingress"
+  from_port         = "443"
+  to_port           = "443"
+  protocol          = "tcp"
+  cidr_blocks       = ["0.0.0.0/0"]
+  security_group_id = "${module.networking.security_group_id}"
+}
+
+resource "aws_lb_target_group" "target-tcp-443" {
+  name     = "${local.prefix}-tcp-443"
+  port     = 443
+  protocol = "TCP"
+  target_type = "ip"
+  vpc_id   = "${module.networking.vpc_id}"
+  health_check {
+    path     = "/healthz"
+    port     = 80
+    timeout  = 6
+    interval = 10
+    matcher  = "200-399"
+  }
+}
+
+resource "aws_lb_target_group" "target-tcp-80" {
+  name     = "${local.prefix}-tcp-80"
+  port     = 80
+  protocol = "TCP"
+  target_type = "ip"
+  vpc_id   = "${module.networking.vpc_id}"
+  health_check {
+    path     = "/healthz"
+    port     = 80
+    timeout  = 6
+    interval = 10
+    matcher  = "200-399"
+  }
+}
+
+resource "aws_lb_target_group_attachment" "tg-tcp-443-attachment" {
+  count            = "${local.count}"
+  target_group_arn = "${aws_lb_target_group.target-tcp-443.arn}"
+# target_id        = "${element(aws_instance.instances.*.id, count.index)}"
+  target_id        = "${element(aws_instance.instances.*.private_ip, count.index)}"
+  port             = 443
+}
+
+resource "aws_lb_target_group_attachment" "tg-tcp-80-attachment" {
+  count            = "${local.count}"
+  target_group_arn = "${aws_lb_target_group.target-tcp-80.arn}"
+# target_id        = "${element(aws_instance.instances.*.id, count.index)}"
+  target_id        = "${element(aws_instance.instances.*.private_ip, count.index)}"
+  port             = 80
+}
+
+resource "aws_lb" "lb" {
+  name               = "${local.prefix}-lb"
+  internal           = false
+  load_balancer_type = "network"
+  subnets            = ["${module.networking.subnet_id}"]
+
+  tags = {
+    Name = "${local.prefix}-lb"
+  }
+}
+
+resource "aws_lb_listener" "lb_listener-tcp-80" {
+  load_balancer_arn = "${aws_lb.lb.arn}"
+  port              = "80"
+  protocol          = "TCP"
+
+  default_action {
+    type             = "forward"
+    target_group_arn = "${aws_lb_target_group.target-tcp-80.arn}"
+  }
+}
+
+resource "aws_lb_listener" "lb_listener-tcp-443" {
+  load_balancer_arn = "${aws_lb.lb.arn}"
+  port              = "443"
+  protocol          = "TCP"
+
+  default_action {
+    type             = "forward"
+    target_group_arn = "${aws_lb_target_group.target-tcp-443.arn}"
+  }
+}
+
+resource "aws_instance" "instances" {
+  count = "${local.count}"
+  tags = {
+    Name = "${local.prefix}${count.index + 1}"
+  }
+
+  key_name                    = "${local.key_name}"
+  ami                         = "${module.ami.rancheros-1_5_4}"
+  instance_type               = "${local.instance_type}"
+  associate_public_ip_address = "true"
+  availability_zone           = "${local.availability_zone}"
+  subnet_id                   = "${module.networking.subnet_id}"
+  private_ip                  = "${cidrhost(module.networking.sn_cidr_block, count.index + 10)}"
+# security_groups             = ["${module.networking.security_group_id}"]
+  vpc_security_group_ids      = ["${module.networking.security_group_id}"]
+
+  root_block_device {
+    volume_size = 10
+  }
+
+  credit_specification {
+    cpu_credits = "standard"
+  }
+
+  connection {
+    host = self.public_ip
+    user = "${local.username}"
+  }
+
+}
+
+data "aws_route53_zone" "myzone" {
+  name = "${local.domain}."
+}
+
+resource "aws_route53_record" "mydns" {
+  zone_id = "${data.aws_route53_zone.myzone.zone_id}"
+  name    = "${local.fqdn}"
+  type    = "CNAME"
+  ttl     = "60"
+  records = ["${aws_lb.lb.dns_name}"]
+}
+
+output "rancher-url" {
+  value = ["https://${local.fqdn}"]
+}
+
+output "loadbalancer-url" {
+  value = ["https://${aws_lb.lb.dns_name}"]
+}
+
+output "node-ips" {
+  value = "${aws_instance.instances.*.public_ip}"
+}
+
+resource "local_file" "cluster_yaml" {
+  content =  <<EOT
+authentication:
+    sans:
+      - "${local.fqdn}"
+      - "${aws_lb.lb.dns_name}"
+%{ for ip in aws_instance.instances.*.public_ip ~}
+      - "${ip}"
+%{ endfor ~}
+
+#kubernetes_version: v1.14.1-rancher1-2
+nodes:
+%{ for index, ip in aws_instance.instances.*.public_ip }
+  - address: ${ip}
+    internal_address: ${cidrhost(module.networking.sn_cidr_block, 10 + index)}
+    user: ${local.username}
+    role: [controlplane,worker,etcd]
+%{ endfor }
+
+ssh_agent_auth: true
+
+services:
+  etcd:
+    backup_config:
+      interval_hours: 1
+      retention: 24
+      s3backupconfig:
+        access_key: "${local.access_key}"
+        secret_key: "${local.secret_key}"
+        bucket_name: "dnoland-s3-backup"
+        region: "${local.region}"
+        folder: "${local.prefix}"
+        endpoint: "s3-${local.region}.amazonaws.com"
+EOT
+  filename = "rancher-cluster.yml"
+}
+
+resource "local_file" "install_script" {
+  content =  <<EOT
+#!/bin/bash
+
+rke up --config ./rancher-cluster.yml
+export KUBECONFIG=kube_config_rancher-cluster.yml
+kubectl get nodes
+#sleep 5
+kubectl get pods --all-namespaces
+#sleep 5
+#helm repo add jetstack https://charts.jetstack.io
+helm repo add rancher-latest https://releases.rancher.com/server-charts/latest
+helm repo update
+#kubectl apply -f https://raw.githubusercontent.com/jetstack/cert-manager/release-0.9/deploy/manifests/00-crds.yaml
+#kubectl create namespace cert-manager
+#kubectl label namespace cert-manager certmanager.k8s.io/disable-validation=true
+#helm install cert-manager --namespace cert-manager --version v0.9.1 jetstack/cert-manager
+#kubectl -n cert-manager rollout status deploy/cert-manager
+#kubectl -n cert-manager rollout status deploy/cert-manager-cainjector
+#kubectl -n cert-manager rollout status deploy/cert-manager-webhook
+#kubectl get pods --namespace cert-manager
+kubectl create namespace cattle-system
+helm install rancher rancher-latest/rancher \
+  --namespace cattle-system \
+  --version ${local.rancher_version} \
+  --set hostname=${local.fqdn} \
+  --set ingress.tls.source=secret \
+  --set addLocal="true" \
+  --set debug=true
+kubectl -n cattle-system create secret tls tls-rancher-ingress --cert=cert.pem --key=key.pem
+kubectl -n cattle-system rollout status deploy/rancher
+EOT
+  filename = "install_rancher_ha.sh"
+}

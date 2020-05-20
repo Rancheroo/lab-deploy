@@ -1,8 +1,9 @@
 #!/bin/bash
 export KUBECONFIG=kube_config_cluster.yml
-helm repo add rancher-stable https://releases.rancher.com/server-charts/stable 
-kubectl create namespace cattle-system 
-kubectl apply -f https://raw.githubusercontent.com/jetstack/cert-manager/release-0.12/deploy/manifests/00-crds.yaml \
+# helm repo add rancher-stable https://releases.rancher.com/server-charts/stable \
+helm repo add rancher-alpha https://releases.rancher.com/server-charts/alpha \
+&& kubectl create namespace cattle-system \
+&& kubectl apply -f https://raw.githubusercontent.com/jetstack/cert-manager/release-0.9/deploy/manifests/00-crds.yaml \
 && kubectl create namespace cert-manager \
 && kubectl label namespace cert-manager certmanager.k8s.io/disable-validation=true \
 && helm repo add jetstack https://charts.jetstack.io \
@@ -10,5 +11,5 @@ kubectl apply -f https://raw.githubusercontent.com/jetstack/cert-manager/release
 && helm install \
   cert-manager jetstack/cert-manager \
   --namespace cert-manager \
-  --version v0.12.0
+  --version v0.9.1
 kubectl get pods --namespace cert-manager -w
